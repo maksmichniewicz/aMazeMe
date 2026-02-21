@@ -192,6 +192,39 @@
   color: #4b5563;
 }
 
+/* Mode selector */
+.mode-selector {
+  display: flex;
+  gap: 2px;
+  background: #e5e7eb;
+  border-radius: 8px;
+  padding: 2px;
+}
+
+.mode-selector button {
+  flex: 1;
+  padding: 5px 10px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #6b7280;
+  transition: background 0.2s, color 0.2s;
+  white-space: nowrap;
+}
+
+.mode-selector button.active {
+  background: #6366f1;
+  color: white;
+}
+
+.mode-selector button:hover:not(.active) {
+  background: #d1d5db;
+  color: #374151;
+}
+
 .stepper {
   display: flex;
   align-items: center;

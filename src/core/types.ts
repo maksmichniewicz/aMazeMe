@@ -12,6 +12,13 @@ export interface Cell {
   visited: boolean;
 }
 
+export interface WallPosition {
+  cell: Position;
+  direction: Direction;
+}
+
+export type DoorKeyMode = 'colored' | 'numbered' | 'generic';
+
 export interface Maze {
   width: number;
   height: number;

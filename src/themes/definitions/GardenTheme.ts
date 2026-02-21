@@ -155,18 +155,4 @@ export const GardenTheme: ThemeConfig = {
     }
   },
 
-  printVariant: {
-    drawBackground() { },
-    drawPath() { },
-    drawPathDecoration() { },
-    drawWall(rc: RenderContext, from: Point, to: Point) {
-      rc.ctx.strokeStyle = '#000000';
-      rc.ctx.lineWidth = 1.5;
-      rc.ctx.lineCap = 'round';
-      rc.ctx.beginPath();
-      rc.ctx.moveTo(from.x, from.y);
-      rc.ctx.lineTo(to.x, to.y);
-      rc.ctx.stroke();
-    },
-  },
 };

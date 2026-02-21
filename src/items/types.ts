@@ -1,10 +1,11 @@
-import type { Position } from '../core/types';
+import type { Position, WallPosition } from '../core/types';
 import type { CellRect, RenderContext } from '../renderer/types';
 
 export interface ItemInstance {
   id: string;
   typeId: string;
   position: Position;
+  wallPosition?: WallPosition;
   pairedItemId?: string;
   colorIndex: number;
 }

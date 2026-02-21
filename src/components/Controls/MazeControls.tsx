@@ -2,6 +2,7 @@ import { SizeSelector } from './SizeSelector';
 import { DifficultySlider } from './DifficultySlider';
 import { ThemeSelector } from './ThemeSelector';
 import { ItemConfigPanel } from './ItemConfigPanel';
+import type { DoorKeyMode } from '../../core/types';
 
 interface MazeControlsProps {
   width: number;
@@ -10,6 +11,8 @@ interface MazeControlsProps {
   themeId: string;
   keyDoorPairs: number;
   treasures: number;
+  doorKeyMode: DoorKeyMode;
+  maxKeyDoorPairs: number;
   mazeCount: number;
   maxMazeCount: number;
   onWidthChange: (w: number) => void;
@@ -18,6 +21,7 @@ interface MazeControlsProps {
   onThemeChange: (id: string) => void;
   onKeyDoorPairsChange: (v: number) => void;
   onTreasuresChange: (v: number) => void;
+  onDoorKeyModeChange: (m: DoorKeyMode) => void;
   onMazeCountChange: (v: number) => void;
   onGenerate: () => void;
   onPrint: () => void;
@@ -44,8 +48,11 @@ export function MazeControls(props: MazeControlsProps) {
       <ItemConfigPanel
         keyDoorPairs={props.keyDoorPairs}
         treasures={props.treasures}
+        doorKeyMode={props.doorKeyMode}
+        maxKeyDoorPairs={props.maxKeyDoorPairs}
         onKeyDoorPairsChange={props.onKeyDoorPairsChange}
         onTreasuresChange={props.onTreasuresChange}
+        onDoorKeyModeChange={props.onDoorKeyModeChange}
       />
       <div className="control-group">
         <label className="control-label">Ilość labiryntów</label>

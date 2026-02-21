@@ -1,5 +1,5 @@
 import { useCallback, useRef } from 'react';
-import type { Maze } from '../core/types';
+import type { Maze, DoorKeyMode } from '../core/types';
 import { generateMaze } from '../core/MazeGenerator';
 import { applyDifficultyModifier } from '../core/MazeDifficultyModifier';
 import { verifyMaze } from '../core/MazeVerifier';
@@ -13,6 +13,7 @@ interface MazeConfig {
   difficulty: number;
   keyDoorPairs: number;
   treasures: number;
+  doorKeyMode: DoorKeyMode;
 }
 
 interface MazeResult {
@@ -51,6 +52,7 @@ export function useMazeGenerator() {
       config.keyDoorPairs,
       config.treasures,
       seed,
+      config.doorKeyMode,
     );
 
     if (placeError) {
@@ -58,7 +60,7 @@ export function useMazeGenerator() {
     }
 
     // Verify item placement (progressive BFS + treasure reachability)
-    if (!verifyItemPlacement(maze, items)) {
+    if (!verifyItemPlacement(maze, items, config.doorKeyMode)) {
       return {
         maze,
         items: [],
@@ -78,19 +80,19 @@ export function useMazeGenerator() {
   }, [generate]);
 
   const updateItems = useCallback(
-    (maze: Maze, keyDoorPairs: number, treasures: number): { items: ItemInstance[]; error?: string } => {
+    (maze: Maze, keyDoorPairs: number, treasures: number, doorKeyMode: DoorKeyMode): { items: ItemInstance[]; error?: string } => {
       if (keyDoorPairs === 0 && treasures === 0) {
         return { items: [] };
       }
 
       const seed = lastSeedRef.current;
-      const { items, error: placeError } = placeItems(maze, keyDoorPairs, treasures, seed);
+      const { items, error: placeError } = placeItems(maze, keyDoorPairs, treasures, seed, doorKeyMode);
 
       if (placeError) {
         return { items, error: placeError };
       }
 
-      if (!verifyItemPlacement(maze, items)) {
+      if (!verifyItemPlacement(maze, items, doorKeyMode)) {
         return {
           items: [],
           error: 'Układ przedmiotów jest nierozwiązywalny. Zmniejsz liczbę par klucz-drzwi.',

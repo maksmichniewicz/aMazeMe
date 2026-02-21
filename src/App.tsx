@@ -7,12 +7,14 @@ import { PrintView } from './components/PrintView/PrintView';
 import { useMazeGenerator } from './hooks/useMazeGenerator';
 import { usePrint } from './hooks/usePrint';
 import { themeRegistry } from './themes/index';
-import type { Maze } from './core/types';
+import type { Maze, DoorKeyMode } from './core/types';
 import type { ItemInstance } from './items/types';
 import {
   DEFAULT_WIDTH,
   DEFAULT_HEIGHT,
   DEFAULT_DIFFICULTY,
+  DEFAULT_DOOR_KEY_MODE,
+  MAX_KEY_DOOR_PAIRS,
 } from './utils/constants';
 import './App.css';
 
@@ -22,9 +24,27 @@ interface MazeEntry {
 }
 
 function getMaxMazeCount(width: number, height: number): number {
-  if (width <= 15 && height <= 15) return 12;
-  if (width <= 25 && height <= 25) return 6;
-  return 4;
+  if (width <= 15 && height <= 15) return 12;  // Mały: 3x4
+  if (width <= 25 && height <= 25) return 6;   // Średni: 2x3
+  if (width <= 40 && height <= 40) return 4;   // Duży: 2x2
+  return 2;                                     // Gigant: 1x2
+}
+
+function getGridCols(width: number, height: number, count: number): number {
+  if (count <= 1) return 1;
+  if (width > 40 || height > 40) return 1;
+  if (width > 15 || height > 15) return 2;
+  return Math.min(3, count);
+}
+
+function getPrintCols(width: number, height: number): number {
+  if (width > 40 || height > 40) return 1;
+  if (width > 15 || height > 15) return 2;
+  return 3;
+}
+
+function getMaxKeyDoorPairs(width: number, height: number): number {
+  return Math.min(MAX_KEY_DOOR_PAIRS, Math.floor(Math.min(width, height) / 5));
 }
 
 function App() {
@@ -34,6 +54,7 @@ function App() {
   const [themeId, setThemeId] = useState('basic');
   const [keyDoorPairs, setKeyDoorPairs] = useState(0);
   const [treasures, setTreasures] = useState(0);
+  const [doorKeyMode, setDoorKeyMode] = useState<DoorKeyMode>(DEFAULT_DOOR_KEY_MODE);
   const [mazeCount, setMazeCount] = useState(1);
   const [mazes, setMazes] = useState<MazeEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -44,62 +65,74 @@ function App() {
 
   const theme = themeRegistry.get(themeId) || themeRegistry.getAll()[0];
   const maxMazeCount = getMaxMazeCount(width, height);
+  const maxKeyDoorPairs = getMaxKeyDoorPairs(width, height);
 
   const handleWidthChange = useCallback((w: number) => {
     setWidth(w);
     const newMax = getMaxMazeCount(w, height);
     setMazeCount((prev) => Math.min(prev, newMax));
+    const newMaxPairs = getMaxKeyDoorPairs(w, height);
+    setKeyDoorPairs((prev) => Math.min(prev, newMaxPairs));
   }, [height]);
 
   const handleHeightChange = useCallback((h: number) => {
     setHeight(h);
     const newMax = getMaxMazeCount(width, h);
     setMazeCount((prev) => Math.min(prev, newMax));
+    const newMaxPairs = getMaxKeyDoorPairs(width, h);
+    setKeyDoorPairs((prev) => Math.min(prev, newMaxPairs));
   }, [width]);
 
   const handleGenerate = useCallback(() => {
-    const results = generateMultiple({ width, height, difficulty, keyDoorPairs, treasures }, mazeCount);
+    const results = generateMultiple({ width, height, difficulty, keyDoorPairs, treasures, doorKeyMode }, mazeCount);
     const entries: MazeEntry[] = results.map((r) => ({ maze: r.maze, items: r.items }));
     setMazes(entries);
     const firstError = results.find((r) => r.error)?.error;
     setError(firstError || null);
-  }, [width, height, difficulty, keyDoorPairs, treasures, mazeCount, generateMultiple]);
+  }, [width, height, difficulty, keyDoorPairs, treasures, doorKeyMode, mazeCount, generateMultiple]);
 
   const handleKeyDoorPairsChange = useCallback((value: number) => {
     setKeyDoorPairs(value);
     if (mazes.length > 0) {
       const updated = mazes.map((entry) => {
-        const result = updateItems(entry.maze, value, treasures);
+        const result = updateItems(entry.maze, value, treasures, doorKeyMode);
         return { maze: entry.maze, items: result.items };
       });
       setMazes(updated);
     }
-  }, [mazes, treasures, updateItems]);
+  }, [mazes, treasures, doorKeyMode, updateItems]);
 
   const handleTreasuresChange = useCallback((value: number) => {
     setTreasures(value);
     if (mazes.length > 0) {
       const updated = mazes.map((entry) => {
-        const result = updateItems(entry.maze, keyDoorPairs, value);
+        const result = updateItems(entry.maze, keyDoorPairs, value, doorKeyMode);
         return { maze: entry.maze, items: result.items };
       });
       setMazes(updated);
     }
-  }, [mazes, keyDoorPairs, updateItems]);
+  }, [mazes, keyDoorPairs, doorKeyMode, updateItems]);
+
+  const handleDoorKeyModeChange = useCallback((mode: DoorKeyMode) => {
+    setDoorKeyMode(mode);
+    if (mazes.length > 0 && keyDoorPairs > 0) {
+      const updated = mazes.map((entry) => {
+        const result = updateItems(entry.maze, keyDoorPairs, treasures, mode);
+        return { maze: entry.maze, items: result.items };
+      });
+      setMazes(updated);
+    }
+  }, [mazes, keyDoorPairs, treasures, updateItems]);
 
   const handlePrint = useCallback(() => {
     const canvases = printCanvasRefs.current.filter((c): c is HTMLCanvasElement => c !== null);
     if (canvases.length > 0) {
-      const cols = width <= 15 ? (canvases.length > 6 ? 4 : 3) : width <= 25 ? 2 : 1;
+      const cols = getPrintCols(width, height);
       print(canvases, cols);
     }
-  }, [print, width]);
+  }, [print, width, height]);
 
-  const gridCols = mazes.length <= 1 ? 1
-    : mazes.length <= 2 ? 2
-    : mazes.length <= 4 ? 2
-    : mazes.length <= 6 ? 3
-    : 4;
+  const gridCols = getGridCols(width, height, mazes.length);
 
   return (
     <div className="app">
@@ -114,6 +147,8 @@ function App() {
             themeId={themeId}
             keyDoorPairs={keyDoorPairs}
             treasures={treasures}
+            doorKeyMode={doorKeyMode}
+            maxKeyDoorPairs={maxKeyDoorPairs}
             mazeCount={mazeCount}
             maxMazeCount={maxMazeCount}
             onWidthChange={handleWidthChange}
@@ -122,6 +157,7 @@ function App() {
             onThemeChange={setThemeId}
             onKeyDoorPairsChange={handleKeyDoorPairsChange}
             onTreasuresChange={handleTreasuresChange}
+            onDoorKeyModeChange={handleDoorKeyModeChange}
             onMazeCountChange={setMazeCount}
             onGenerate={handleGenerate}
             onPrint={handlePrint}
@@ -130,7 +166,7 @@ function App() {
         }
       >
         {mazes.length === 0 ? (
-          <MazeCanvas maze={null} theme={theme} items={[]} />
+          <MazeCanvas maze={null} theme={theme} items={[]} doorKeyMode={doorKeyMode} />
         ) : (
           <div className="maze-grid" style={{ gridTemplateColumns: `repeat(${gridCols}, 1fr)` }}>
             {mazes.map((entry, i) => (
@@ -139,6 +175,7 @@ function App() {
                 maze={entry.maze}
                 theme={theme}
                 items={entry.items}
+                doorKeyMode={doorKeyMode}
               />
             ))}
           </div>
@@ -148,6 +185,7 @@ function App() {
         mazes={mazes}
         theme={theme}
         canvasRefs={printCanvasRefs}
+        doorKeyMode={doorKeyMode}
       />
     </div>
   );

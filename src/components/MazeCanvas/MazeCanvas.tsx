@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react';
-import type { Maze } from '../../core/types';
+import type { Maze, DoorKeyMode } from '../../core/types';
 import type { ThemeConfig } from '../../themes/types';
 import type { ItemInstance } from '../../items/types';
 import { renderMaze } from '../../renderer/MazeRenderer';
@@ -9,9 +9,10 @@ interface MazeCanvasProps {
   maze: Maze | null;
   theme: ThemeConfig;
   items: ItemInstance[];
+  doorKeyMode: DoorKeyMode;
 }
 
-export function MazeCanvas({ maze, theme, items }: MazeCanvasProps) {
+export function MazeCanvas({ maze, theme, items, doorKeyMode }: MazeCanvasProps) {
   const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -26,8 +27,8 @@ export function MazeCanvas({ maze, theme, items }: MazeCanvasProps) {
     const cellSizeH = Math.floor((maxHeight - 40) / maze.height);
     const cellSize = Math.min(cellSizeW, cellSizeH, DEFAULT_CELL_SIZE);
 
-    renderMaze(ref.current, maze, theme, Math.max(cellSize, 20), items);
-  }, [maze, theme, items]);
+    renderMaze(ref.current, maze, theme, Math.max(cellSize, 20), items, false, doorKeyMode);
+  }, [maze, theme, items, doorKeyMode]);
 
   if (!maze) {
     return (

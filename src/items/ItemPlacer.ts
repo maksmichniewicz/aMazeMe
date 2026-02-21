@@ -1,4 +1,4 @@
-import type { Maze, Position } from '../core/types';
+import type { Maze, Position, WallPosition, DoorKeyMode } from '../core/types';
 import type { ItemInstance } from './types';
 import { SeededRandom } from '../utils/random';
 import {
@@ -6,6 +6,9 @@ import {
   positionKey,
   positionsEqual,
   bfsDistanceMap,
+  wallPositionKey,
+  bfsWithBlockedPassages,
+  getSolutionPassages,
 } from '../utils/gridHelpers';
 
 /**
@@ -16,10 +19,12 @@ export function placeItems(
   keyDoorPairs: number,
   treasureCount: number,
   seed: number,
+  doorKeyMode: DoorKeyMode,
 ): { items: ItemInstance[]; error?: string } {
   const rng = new SeededRandom(seed + 3000);
   const items: ItemInstance[] = [];
   const occupied = new Set<string>();
+  const occupiedPassages = new Set<string>();
 
   // Mark entrance and exit as occupied
   occupied.add(positionKey(maze.entrance));
@@ -32,15 +37,15 @@ export function placeItems(
 
   // Place key-door pairs
   for (let i = 0; i < keyDoorPairs; i++) {
-    const doorPos = findDoorPosition(maze, occupied, rng, i, keyDoorPairs);
-    if (!doorPos) {
+    const doorPassage = findDoorPassage(maze, occupiedPassages, rng, i, keyDoorPairs);
+    if (!doorPassage) {
       return {
         items,
-        error: `Nie udało się umieścić przejścia nr ${i + 1}. Labirynt jest za mały.`,
+        error: `Nie udało się umieścić przejścia nr ${i + 1}. Labirynt jest za mały lub trudność jest za wysoka.`,
       };
     }
 
-    const keyPos = findKeyPosition(maze, doorPos, occupied, deadEndSet, rng);
+    const keyPos = findKeyPosition(maze, doorPassage, occupied, deadEndSet, rng);
     if (!keyPos) {
       return {
         items,
@@ -50,23 +55,25 @@ export function placeItems(
 
     const doorId = `door-${i}`;
     const keyId = `key-${i}`;
+    const isGeneric = doorKeyMode === 'generic';
 
     items.push({
       id: doorId,
       typeId: 'door',
-      position: doorPos,
-      pairedItemId: keyId,
-      colorIndex: i,
+      position: doorPassage.cell,
+      wallPosition: doorPassage,
+      pairedItemId: isGeneric ? undefined : keyId,
+      colorIndex: isGeneric ? -1 : i,
     });
     items.push({
       id: keyId,
       typeId: 'key',
       position: keyPos,
-      pairedItemId: doorId,
-      colorIndex: i,
+      pairedItemId: isGeneric ? undefined : doorId,
+      colorIndex: isGeneric ? -1 : i,
     });
 
-    occupied.add(positionKey(doorPos));
+    occupiedPassages.add(wallPositionKey(doorPassage));
     occupied.add(positionKey(keyPos));
   }
 
@@ -113,60 +120,99 @@ export function placeItems(
   return { items };
 }
 
-function findDoorPosition(
+function findDoorPassage(
   maze: Maze,
-  occupied: Set<string>,
+  occupiedPassages: Set<string>,
   rng: SeededRandom,
   pairIndex: number,
   totalPairs: number,
-): Position | null {
-  // Place door near (pairIndex+1)/(totalPairs+1) along solution path
-  const solution = maze.solution;
-  const targetIdx = Math.round(solution.length * (pairIndex + 1) / (totalPairs + 1));
-  const windowSize = Math.max(Math.round(solution.length * 0.15), 2);
-  const minIdx = Math.max(1, targetIdx - windowSize); // skip entrance (index 0)
-  const maxIdx = Math.min(solution.length - 2, targetIdx + windowSize); // skip exit (last index)
+): WallPosition | null {
+  const solutionPassages = getSolutionPassages(maze.solution);
+  if (solutionPassages.length === 0) return null;
+
+  // Target window: distribute doors evenly along solution
+  const targetIdx = Math.round(
+    solutionPassages.length * (pairIndex + 1) / (totalPairs + 1),
+  );
+  const windowSize = Math.max(Math.round(solutionPassages.length * 0.15), 2);
+  // Skip first and last passage (near entrance/exit)
+  const minIdx = Math.max(1, targetIdx - windowSize);
+  const maxIdx = Math.min(solutionPassages.length - 2, targetIdx + windowSize);
 
   // Candidates within the target window
-  const windowCandidates: Position[] = [];
+  const windowCandidates: WallPosition[] = [];
   for (let j = minIdx; j <= maxIdx; j++) {
-    const p = solution[j];
-    if (!occupied.has(positionKey(p))) {
-      windowCandidates.push(p);
+    const passage = solutionPassages[j];
+    if (!occupiedPassages.has(wallPositionKey(passage))) {
+      windowCandidates.push(passage);
     }
   }
 
-  if (windowCandidates.length > 0) {
-    rng.shuffle(windowCandidates);
-    return windowCandidates[0];
+  // Shuffle and test candidates for effectiveness (bypass detection)
+  const shuffled = [...windowCandidates];
+  rng.shuffle(shuffled);
+
+  for (const candidate of shuffled) {
+    if (isPassageEffective(maze, candidate, occupiedPassages)) {
+      return candidate;
+    }
   }
 
-  // Fallback: any unoccupied solution cell (not entrance/exit)
-  const fallback = solution.filter(
-    (p) =>
-      !positionsEqual(p, maze.entrance) &&
-      !positionsEqual(p, maze.exit) &&
-      !occupied.has(positionKey(p)),
-  );
-  if (fallback.length === 0) return null;
+  // Fallback: any unoccupied solution passage (skip first and last)
+  const fallback: WallPosition[] = [];
+  for (let j = 1; j < solutionPassages.length - 1; j++) {
+    const passage = solutionPassages[j];
+    if (!occupiedPassages.has(wallPositionKey(passage))) {
+      fallback.push(passage);
+    }
+  }
   rng.shuffle(fallback);
-  return fallback[0];
+
+  for (const candidate of fallback) {
+    if (isPassageEffective(maze, candidate, occupiedPassages)) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Check if blocking this passage (plus already-placed doors) prevents reaching the exit.
+ * If the exit is still reachable without this door, it's bypassable and thus not effective.
+ */
+function isPassageEffective(
+  maze: Maze,
+  passage: WallPosition,
+  alreadyBlockedPassages: Set<string>,
+): boolean {
+  const blockedSet = new Set(alreadyBlockedPassages);
+  blockedSet.add(wallPositionKey(passage));
+
+  const reachable = bfsWithBlockedPassages(
+    maze.grid,
+    maze.entrance,
+    maze.width,
+    maze.height,
+    blockedSet,
+  );
+
+  return !reachable.has(positionKey(maze.exit));
 }
 
 function findKeyPosition(
   maze: Maze,
-  doorPos: Position,
+  doorPassage: WallPosition,
   occupied: Set<string>,
   deadEndSet: Set<string>,
   rng: SeededRandom,
 ): Position | null {
-  // Key must be reachable from entrance WITHOUT passing through the door
-  const reachable = bfsWithoutDoor(maze, maze.entrance, doorPos);
+  // Key must be reachable from entrance WITHOUT passing through the door passage
+  const reachable = bfsReachableWithoutPassage(maze, maze.entrance, doorPassage);
   const candidates = reachable.filter(
     (p) =>
       !positionsEqual(p, maze.entrance) &&
-      !occupied.has(positionKey(p)) &&
-      !positionsEqual(p, doorPos),
+      !occupied.has(positionKey(p)),
   );
 
   if (candidates.length === 0) return null;
@@ -196,7 +242,12 @@ function findKeyPosition(
   return topHalf[0];
 }
 
-function bfsWithoutDoor(maze: Maze, start: Position, doorPos: Position): Position[] {
+function bfsReachableWithoutPassage(
+  maze: Maze,
+  start: Position,
+  blockedPassage: WallPosition,
+): Position[] {
+  const blockedKey = wallPositionKey(blockedPassage);
   const visited = new Set<string>();
   const queue: Position[] = [start];
   visited.add(positionKey(start));
@@ -211,10 +262,13 @@ function bfsWithoutDoor(maze: Maze, start: Position, doorPos: Position): Positio
       maze.height,
     );
 
-    for (const { position } of neighbors) {
+    for (const { position, direction } of neighbors) {
       const key = positionKey(position);
       if (visited.has(key)) continue;
-      if (positionsEqual(position, doorPos)) continue; // Can't pass through door
+
+      const passageKey = wallPositionKey({ cell: current, direction });
+      if (passageKey === blockedKey) continue;
+
       visited.add(key);
       queue.push(position);
       result.push(position);

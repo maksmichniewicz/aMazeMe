@@ -1,9 +1,10 @@
 import type { Maze } from '../core/types';
+import type { DoorKeyMode } from '../core/types';
 import type { ThemeConfig } from '../themes/types';
 import type { ItemInstance } from '../items/types';
 import { itemRegistry } from '../items/ItemRegistry';
 import type { RenderContext } from './types';
-import { cellToRect } from './types';
+import { cellToRect, wallToRect } from './types';
 import { SeededRandom } from '../utils/random';
 import { CANVAS_PADDING } from '../utils/constants';
 
@@ -14,6 +15,7 @@ export function renderMaze(
   cellSize: number,
   items: ItemInstance[] = [],
   isPrint: boolean = false,
+  doorKeyMode: DoorKeyMode = 'colored',
 ): void {
   const activeTheme = isPrint && theme.printVariant
     ? { ...theme, ...theme.printVariant }
@@ -27,7 +29,7 @@ export function renderMaze(
   canvas.height = canvasHeight;
 
   const ctx = canvas.getContext('2d')!;
-  const rc: RenderContext = { ctx, cellSize, padding, canvasWidth, canvasHeight };
+  const rc: RenderContext = { ctx, cellSize, padding, canvasWidth, canvasHeight, doorKeyMode };
 
   // 1. Background — white canvas, then theme fills the grid area
   ctx.fillStyle = '#ffffff';
@@ -76,7 +78,16 @@ export function renderMaze(
 
   // 5. Items
   for (const item of items) {
-    const itemRect = cellToRect(item.position, cellSize, padding);
+    let itemRect;
+
+    if (item.wallPosition) {
+      // Door on a wall — position rect centered on the passage
+      itemRect = wallToRect(item.wallPosition, cellSize, padding);
+    } else {
+      // Cell-based item (key, treasure)
+      itemRect = cellToRect(item.position, cellSize, padding);
+    }
+
     const handled = activeTheme.drawItem?.(rc, itemRect, item);
     if (!handled) {
       const itemDef = itemRegistry.get(item.typeId);

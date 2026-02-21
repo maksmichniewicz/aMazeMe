@@ -11,6 +11,7 @@ const PRESETS = [
   { label: 'Mały (10x10)', width: 10, height: 10 },
   { label: 'Średni (20x20)', width: 20, height: 20 },
   { label: 'Duży (30x30)', width: 30, height: 30 },
+  { label: 'Gigant (50x50)', width: 50, height: 50 },
 ];
 
 export function SizeSelector({ width, height, onWidthChange, onHeightChange }: SizeSelectorProps) {

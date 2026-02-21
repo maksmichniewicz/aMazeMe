@@ -1,9 +1,11 @@
-import type { Maze, Position } from '../core/types';
+import type { Maze, Position, DoorKeyMode } from '../core/types';
 import type { ItemInstance } from './types';
 import {
   getAccessibleNeighbors,
+  getNeighbor,
   positionKey,
-  positionsEqual,
+  wallPositionKey,
+  bfsWithBlockedPassages,
 } from '../utils/gridHelpers';
 
 /**
@@ -11,7 +13,11 @@ import {
  * Also checks for deadlocks in key-door dependencies.
  * Verifies all treasures are reachable.
  */
-export function verifyItemPlacement(maze: Maze, items: ItemInstance[]): boolean {
+export function verifyItemPlacement(
+  maze: Maze,
+  items: ItemInstance[],
+  doorKeyMode: DoorKeyMode,
+): boolean {
   const doors = items.filter((i) => i.typeId === 'door');
   const keys = items.filter((i) => i.typeId === 'key');
   const treasures = items.filter((i) => i.typeId === 'treasure');
@@ -23,11 +29,16 @@ export function verifyItemPlacement(maze: Maze, items: ItemInstance[]): boolean 
     return treasures.every((t) => reachable.has(positionKey(t.position)));
   }
 
-  // Check for dependency cycles (deadlocks)
-  if (hasDeadlock(maze, keys, doors)) return false;
+  // Check for dependency cycles (deadlocks) — only for paired modes
+  if (doorKeyMode !== 'generic') {
+    if (hasDeadlock(maze, keys, doors)) return false;
+  }
 
-  // Progressive BFS — returns visited set
-  const visited = progressiveBFS(maze, keys, doors);
+  // Progressive BFS — mode determines strategy
+  const visited = doorKeyMode === 'generic'
+    ? progressiveBFSGeneric(maze, keys, doors)
+    : progressiveBFSPaired(maze, keys, doors);
+
   if (!visited.has(positionKey(maze.exit))) return false;
 
   // Verify all treasures are reachable
@@ -35,14 +46,20 @@ export function verifyItemPlacement(maze: Maze, items: ItemInstance[]): boolean 
 }
 
 /**
- * Progressive BFS: expand reachable area, collect keys, open doors, repeat.
+ * Progressive BFS for paired modes (colored/numbered):
+ * Expand reachable area, collect keys, open matching doors, repeat.
+ * Doors block specific passages (edges), not cells.
  */
-function progressiveBFS(maze: Maze, keys: ItemInstance[], doors: ItemInstance[]): Set<string> {
-  const doorPositions = new Map<string, ItemInstance>();
+function progressiveBFSPaired(maze: Maze, keys: ItemInstance[], doors: ItemInstance[]): Set<string> {
+  // Map passage keys to door instances
+  const doorPassageMap = new Map<string, ItemInstance>();
   for (const door of doors) {
-    doorPositions.set(positionKey(door.position), door);
+    if (door.wallPosition) {
+      doorPassageMap.set(wallPositionKey(door.wallPosition), door);
+    }
   }
 
+  // Map cell keys to key instances
   const keyPositions = new Map<string, ItemInstance>();
   for (const key of keys) {
     keyPositions.set(positionKey(key.position), key);
@@ -71,17 +88,18 @@ function progressiveBFS(maze: Maze, keys: ItemInstance[], doors: ItemInstance[])
         }
 
         const neighbors = getAccessibleNeighbors(maze.grid, pos, maze.width, maze.height);
-        for (const { position } of neighbors) {
-          const key = positionKey(position);
-          if (visited.has(key)) continue;
+        for (const { position, direction } of neighbors) {
+          const nKey = positionKey(position);
+          if (visited.has(nKey)) continue;
 
-          // Check if blocked by unopened door
-          const doorHere = doorPositions.get(key);
-          if (doorHere && !openedDoors.has(doorHere.id)) {
-            continue; // Can't pass through this door yet
+          // Check if this EDGE has an unopened door
+          const passageKey = wallPositionKey({ cell: pos, direction });
+          const doorOnEdge = doorPassageMap.get(passageKey);
+          if (doorOnEdge && !openedDoors.has(doorOnEdge.id)) {
+            continue; // blocked by door
           }
 
-          visited.add(key);
+          visited.add(nKey);
           nextFrontier.push(position);
         }
       }
@@ -97,21 +115,110 @@ function progressiveBFS(maze: Maze, keys: ItemInstance[], doors: ItemInstance[])
         openedDoors.add(door.id);
         changed = true;
 
-        // Add the door position back as frontier if its neighbor is visited
-        const doorKey = positionKey(door.position);
-        if (!visited.has(doorKey)) {
-          // Check if any visited neighbor leads here
-          const neighbors = getAccessibleNeighbors(
-            maze.grid,
-            door.position,
-            maze.width,
-            maze.height,
-          );
-          for (const { position } of neighbors) {
-            if (visited.has(positionKey(position))) {
-              visited.add(doorKey);
-              frontier.push(door.position);
-              break;
+        // When door opens, add the cell on the other side to frontier
+        if (door.wallPosition) {
+          const wp = door.wallPosition;
+          const cellA = wp.cell;
+          const cellB = getNeighbor(wp.cell, wp.direction);
+          const keyA = positionKey(cellA);
+          const keyB = positionKey(cellB);
+
+          if (visited.has(keyA) && !visited.has(keyB)) {
+            visited.add(keyB);
+            frontier.push(cellB);
+          } else if (visited.has(keyB) && !visited.has(keyA)) {
+            visited.add(keyA);
+            frontier.push(cellA);
+          }
+        }
+      }
+    }
+  }
+
+  return visited;
+}
+
+/**
+ * Progressive BFS for generic mode:
+ * Any key opens any door. Count-based: keysCollected > doorsOpened.
+ */
+function progressiveBFSGeneric(maze: Maze, keys: ItemInstance[], doors: ItemInstance[]): Set<string> {
+  const doorPassageMap = new Map<string, ItemInstance>();
+  for (const door of doors) {
+    if (door.wallPosition) {
+      doorPassageMap.set(wallPositionKey(door.wallPosition), door);
+    }
+  }
+
+  const keyPositions = new Map<string, ItemInstance>();
+  for (const key of keys) {
+    keyPositions.set(positionKey(key.position), key);
+  }
+
+  const collectedKeyIds = new Set<string>();
+  const openedDoors = new Set<string>();
+  const visited = new Set<string>();
+  let frontier: Position[] = [maze.entrance];
+  visited.add(positionKey(maze.entrance));
+
+  let changed = true;
+  while (changed) {
+    changed = false;
+
+    // BFS expansion
+    while (frontier.length > 0) {
+      const nextFrontier: Position[] = [];
+
+      for (const pos of frontier) {
+        const keyHere = keyPositions.get(positionKey(pos));
+        if (keyHere && !collectedKeyIds.has(keyHere.id)) {
+          collectedKeyIds.add(keyHere.id);
+          changed = true;
+        }
+
+        const neighbors = getAccessibleNeighbors(maze.grid, pos, maze.width, maze.height);
+        for (const { position, direction } of neighbors) {
+          const nKey = positionKey(position);
+          if (visited.has(nKey)) continue;
+
+          const passageKey = wallPositionKey({ cell: pos, direction });
+          const doorOnEdge = doorPassageMap.get(passageKey);
+          if (doorOnEdge && !openedDoors.has(doorOnEdge.id)) {
+            continue;
+          }
+
+          visited.add(nKey);
+          nextFrontier.push(position);
+        }
+      }
+
+      frontier = nextFrontier;
+    }
+
+    // Generic: open any reachable door if we have spare keys
+    for (const door of doors) {
+      if (openedDoors.has(door.id)) continue;
+
+      // Can open if we have more keys collected than doors opened
+      if (collectedKeyIds.size > openedDoors.size) {
+        // Only open if one side of the door is visited (reachable)
+        if (door.wallPosition) {
+          const wp = door.wallPosition;
+          const cellA = wp.cell;
+          const cellB = getNeighbor(wp.cell, wp.direction);
+          const keyA = positionKey(cellA);
+          const keyB = positionKey(cellB);
+
+          if (visited.has(keyA) || visited.has(keyB)) {
+            openedDoors.add(door.id);
+            changed = true;
+
+            if (visited.has(keyA) && !visited.has(keyB)) {
+              visited.add(keyB);
+              frontier.push(cellB);
+            } else if (visited.has(keyB) && !visited.has(keyA)) {
+              visited.add(keyA);
+              frontier.push(cellA);
             }
           }
         }
@@ -147,26 +254,28 @@ function bfsReachableFromEntrance(maze: Maze): Set<string> {
 
 /**
  * Detects deadlocks by building key-door dependency graph and checking for cycles.
- * A deadlock occurs when key A is behind door B and key B is behind door A (circular).
+ * Uses passage-based blocking (wall positions) instead of cell-based.
  */
 function hasDeadlock(maze: Maze, keys: ItemInstance[], doors: ItemInstance[]): boolean {
-  // Build: for each key, which doors block access to it from the entrance?
-  // If key K is behind door D, then K depends on D's key.
-  const keyDependencies = new Map<string, Set<string>>(); // keyId -> set of keyIds it depends on
+  const keyDependencies = new Map<string, Set<string>>();
 
   for (const key of keys) {
     keyDependencies.set(key.id, new Set());
   }
 
   for (const key of keys) {
-    // BFS from entrance, doors are walls unless we assume we have all other keys
     for (const door of doors) {
-      // Check if this key is ONLY reachable through this door
-      const reachableWithout = bfsReachable(maze, maze.entrance, door.position, doors);
-      const keyReachable = reachableWithout.has(positionKey(key.position));
+      if (!door.wallPosition) continue;
 
-      if (!keyReachable) {
-        // Key depends on passing through this door → depends on door's key
+      // BFS from entrance blocking this door's passage
+      const blockedSet = new Set<string>();
+      blockedSet.add(wallPositionKey(door.wallPosition));
+      const reachable = bfsWithBlockedPassages(
+        maze.grid, maze.entrance, maze.width, maze.height, blockedSet,
+      );
+
+      if (!reachable.has(positionKey(key.position))) {
+        // Key is only reachable through this door
         const doorKey = keys.find((k) => k.id === door.pairedItemId);
         if (doorKey) {
           keyDependencies.get(key.id)!.add(doorKey.id);
@@ -203,30 +312,4 @@ function hasDeadlock(maze: Maze, keys: ItemInstance[], doors: ItemInstance[]): b
   }
 
   return false;
-}
-
-function bfsReachable(
-  maze: Maze,
-  start: Position,
-  blockedDoor: Position,
-  _allDoors: ItemInstance[],
-): Set<string> {
-  const visited = new Set<string>();
-  const queue: Position[] = [start];
-  visited.add(positionKey(start));
-
-  while (queue.length > 0) {
-    const current = queue.shift()!;
-    const neighbors = getAccessibleNeighbors(maze.grid, current, maze.width, maze.height);
-
-    for (const { position } of neighbors) {
-      const key = positionKey(position);
-      if (visited.has(key)) continue;
-      if (positionsEqual(position, blockedDoor)) continue;
-      visited.add(key);
-      queue.push(position);
-    }
-  }
-
-  return visited;
 }

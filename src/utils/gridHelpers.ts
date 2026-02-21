@@ -1,4 +1,4 @@
-import type { Cell, Direction, Position } from '../core/types';
+import type { Cell, Direction, Position, WallPosition } from '../core/types';
 
 export const OPPOSITE_DIRECTION: Record<Direction, Direction> = {
   north: 'south',
@@ -96,4 +96,87 @@ export function bfsDistanceMap(
   }
 
   return distances;
+}
+
+/**
+ * Canonicalizes a WallPosition to always use south or east direction.
+ * This ensures each physical wall has exactly one representation.
+ */
+export function canonicalWallPosition(wp: WallPosition): WallPosition {
+  if (wp.direction === 'north') {
+    return {
+      cell: { row: wp.cell.row - 1, col: wp.cell.col },
+      direction: 'south',
+    };
+  }
+  if (wp.direction === 'west') {
+    return {
+      cell: { row: wp.cell.row, col: wp.cell.col - 1 },
+      direction: 'east',
+    };
+  }
+  return wp;
+}
+
+export function wallPositionKey(wp: WallPosition): string {
+  const c = canonicalWallPosition(wp);
+  return `${c.cell.row},${c.cell.col}:${c.direction}`;
+}
+
+export function wallPositionsEqual(a: WallPosition, b: WallPosition): boolean {
+  return wallPositionKey(a) === wallPositionKey(b);
+}
+
+/**
+ * BFS from start, treating specific passages as impassable.
+ * Returns set of reachable position keys.
+ */
+export function bfsWithBlockedPassages(
+  grid: Cell[][],
+  start: Position,
+  width: number,
+  height: number,
+  blockedPassages: Set<string>,
+): Set<string> {
+  const visited = new Set<string>();
+  const queue: Position[] = [start];
+  visited.add(positionKey(start));
+
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    const neighbors = getAccessibleNeighbors(grid, current, width, height);
+
+    for (const { position, direction } of neighbors) {
+      const key = positionKey(position);
+      if (visited.has(key)) continue;
+
+      const passageKey = wallPositionKey({ cell: current, direction });
+      if (blockedPassages.has(passageKey)) continue;
+
+      visited.add(key);
+      queue.push(position);
+    }
+  }
+
+  return visited;
+}
+
+/**
+ * Extracts the sequence of passages (edges) from a solution path.
+ */
+export function getSolutionPassages(solution: Position[]): WallPosition[] {
+  const passages: WallPosition[] = [];
+  for (let i = 0; i < solution.length - 1; i++) {
+    const from = solution[i];
+    const to = solution[i + 1];
+    const dRow = to.row - from.row;
+    const dCol = to.col - from.col;
+    let direction: Direction;
+    if (dRow === -1) direction = 'north';
+    else if (dRow === 1) direction = 'south';
+    else if (dCol === 1) direction = 'east';
+    else direction = 'west';
+    passages.push({ cell: from, direction });
+  }
+  return passages;
 }
