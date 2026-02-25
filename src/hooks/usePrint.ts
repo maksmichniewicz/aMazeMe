@@ -59,6 +59,7 @@ export function usePrint() {
                 max-width: 100%;
                 max-height: ${Math.floor(90 / Math.ceil(canvases.length / columns))}vh;
                 object-fit: contain;
+                ${canvases.length === 1 ? 'width: 100%;' : ''}
               }
             }
           </style>

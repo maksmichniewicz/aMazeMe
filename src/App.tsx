@@ -129,7 +129,7 @@ function App() {
   const handlePrint = useCallback(() => {
     const canvases = printCanvasRefs.current.filter((c): c is HTMLCanvasElement => c !== null);
     if (canvases.length > 0) {
-      const cols = getPrintCols(width, height);
+      const cols = Math.min(getPrintCols(width, height), canvases.length);
       print(canvases, cols, t('printTitle'));
     }
   }, [print, width, height, t]);
