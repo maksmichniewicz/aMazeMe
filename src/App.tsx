@@ -4,8 +4,9 @@ import { Layout } from './components/Layout/Layout';
 import { MazeControls } from './components/Controls/MazeControls';
 import { MazeCanvas } from './components/MazeCanvas/MazeCanvas';
 import { PrintView } from './components/PrintView/PrintView';
-import { useMazeGenerator } from './hooks/useMazeGenerator';
+import { useMazeGenerator, type MazeError } from './hooks/useMazeGenerator';
 import { usePrint } from './hooks/usePrint';
+import { useTranslation } from './i18n';
 import { themeRegistry } from './themes/index';
 import type { Maze, DoorKeyMode } from './core/types';
 import type { ItemInstance } from './items/types';
@@ -24,10 +25,10 @@ interface MazeEntry {
 }
 
 function getMaxMazeCount(width: number, height: number): number {
-  if (width <= 15 && height <= 15) return 12;  // Mały: 3x4
-  if (width <= 25 && height <= 25) return 6;   // Średni: 2x3
-  if (width <= 40 && height <= 40) return 4;   // Duży: 2x2
-  return 2;                                     // Gigant: 1x2
+  if (width <= 15 && height <= 15) return 12;  // Small: 3x4
+  if (width <= 25 && height <= 25) return 6;   // Medium: 2x3
+  if (width <= 40 && height <= 40) return 4;   // Large: 2x2
+  return 2;                                     // Giant: 1x2
 }
 
 function getGridCols(width: number, height: number, count: number): number {
@@ -57,11 +58,12 @@ function App() {
   const [doorKeyMode, setDoorKeyMode] = useState<DoorKeyMode>(DEFAULT_DOOR_KEY_MODE);
   const [mazeCount, setMazeCount] = useState(1);
   const [mazes, setMazes] = useState<MazeEntry[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<MazeError | null>(null);
 
   const printCanvasRefs = useRef<(HTMLCanvasElement | null)[]>([]);
   const { generateMultiple, updateItems } = useMazeGenerator();
   const { print } = usePrint();
+  const { t } = useTranslation();
 
   const theme = themeRegistry.get(themeId) || themeRegistry.getAll()[0];
   const maxMazeCount = getMaxMazeCount(width, height);
@@ -128,16 +130,16 @@ function App() {
     const canvases = printCanvasRefs.current.filter((c): c is HTMLCanvasElement => c !== null);
     if (canvases.length > 0) {
       const cols = getPrintCols(width, height);
-      print(canvases, cols);
+      print(canvases, cols, t('printTitle'));
     }
-  }, [print, width, height]);
+  }, [print, width, height, t]);
 
   const gridCols = getGridCols(width, height, mazes.length);
 
   return (
     <div className="app">
       <Header />
-      {error && <div className="error-banner">{error}</div>}
+      {error && <div className="error-banner">{t(error.key, error.params)}</div>}
       <Layout
         sidebar={
           <MazeControls

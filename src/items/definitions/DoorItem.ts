@@ -21,8 +21,8 @@ const PAIR_SYMBOLS = [
 
 export const DoorItem: ItemTypeDefinition = {
   typeId: 'door',
-  displayName: 'Drzwi',
-  description: 'Wymagają klucza aby przejść',
+  displayName: 'Door',
+  description: 'Requires a key to pass',
   isPaired: true,
   pairedWithTypeId: 'key',
 

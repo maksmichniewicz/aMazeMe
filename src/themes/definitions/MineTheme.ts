@@ -4,8 +4,8 @@ import { SeededRandom } from '../../utils/random';
 
 export const MineTheme: ThemeConfig = {
   id: 'mine',
-  name: 'Kopalnia',
-  description: 'Szare skały, kamyki, minerały',
+  name: 'Mine',
+  description: 'Gray rocks, pebbles, minerals',
 
   drawBackground(rc: RenderContext) {
     const p = rc.padding;

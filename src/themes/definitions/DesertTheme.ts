@@ -4,8 +4,8 @@ import { SeededRandom } from '../../utils/random';
 
 export const DesertTheme: ThemeConfig = {
   id: 'desert',
-  name: 'Pustynia',
-  description: 'Piasek, piramidy, kaktusy',
+  name: 'Desert',
+  description: 'Sand, pyramids, cacti',
 
   drawBackground(rc: RenderContext) {
     const p = rc.padding;

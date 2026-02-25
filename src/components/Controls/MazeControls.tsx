@@ -3,6 +3,7 @@ import { DifficultySlider } from './DifficultySlider';
 import { ThemeSelector } from './ThemeSelector';
 import { ItemConfigPanel } from './ItemConfigPanel';
 import type { DoorKeyMode } from '../../core/types';
+import { useTranslation } from '../../i18n';
 
 interface MazeControlsProps {
   width: number;
@@ -29,6 +30,8 @@ interface MazeControlsProps {
 }
 
 export function MazeControls(props: MazeControlsProps) {
+  const { t } = useTranslation();
+
   return (
     <div className="maze-controls">
       <SizeSelector
@@ -55,10 +58,10 @@ export function MazeControls(props: MazeControlsProps) {
         onDoorKeyModeChange={props.onDoorKeyModeChange}
       />
       <div className="control-group">
-        <label className="control-label">Ilość labiryntów</label>
+        <label className="control-label">{t('mazeCount')}</label>
         <div className="item-config">
           <div className="item-row">
-            <span>Na stronę:</span>
+            <span>{t('perPage')}</span>
             <div className="stepper">
               <button onClick={() => props.onMazeCountChange(Math.max(1, props.mazeCount - 1))}>−</button>
               <span className="stepper-value">{props.mazeCount}</span>
@@ -69,11 +72,11 @@ export function MazeControls(props: MazeControlsProps) {
       </div>
       <div className="control-buttons">
         <button className="btn btn-primary" onClick={props.onGenerate}>
-          Utwórz
+          {t('generate')}
         </button>
         {props.hasMaze && (
           <button className="btn btn-secondary" onClick={props.onPrint}>
-            Drukuj
+            {t('print')}
           </button>
         )}
       </div>

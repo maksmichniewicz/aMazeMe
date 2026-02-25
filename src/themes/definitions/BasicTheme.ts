@@ -4,8 +4,8 @@ import { SeededRandom } from '../../utils/random';
 
 export const BasicTheme: ThemeConfig = {
   id: 'basic',
-  name: 'Podstawowy',
-  description: 'Czarne linie na białym tle',
+  name: 'Basic',
+  description: 'Black lines on white background',
 
   drawBackground(_rc: RenderContext) {
     // White background — handled by renderer

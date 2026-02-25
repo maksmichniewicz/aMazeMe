@@ -1,58 +1,60 @@
-# aMazeMe - Generator labiryntów dla dzieci
+# aMazeMe - Maze generator for kids
 
-Interaktywna aplikacja webowa do generowania konfigurowalnych labiryntów z elementami logicznymi (klucze, drzwi, skarby). Przeznaczona dla dzieci -- labirynty można drukować jako karty pracy lub rozwiązywać na ekranie.
+Interactive web application for generating configurable mazes with logic elements (keys, doors, treasures). Designed for children -- mazes can be printed as worksheets or solved on screen.
 
-![Screenshot aplikacji aMazeMe](App%20screenshot.png)
+The app supports **English and Polish** -- switch languages instantly via the header toggle.
 
-## Funkcje i możliwości
+![aMazeMe app screenshot](App%20screenshot.png)
 
-### Generowanie labiryntów
-- Algorytm Recursive Backtracker (iteracyjny DFS) z seedowaną pseudolosowością -- identyczny seed daje identyczny labirynt
-- Rozmiary od 3x3 do 50x50 komórek
-- Automatyczne wejście (lewy górny róg) i wyjście (prawy dolny róg)
+## Features
 
-### Poziom trudności
-- Skala 0--10
-- 0 = labirynt doskonały (dokładnie jedna ścieżka między dowolnymi dwoma komórkami)
-- Wyższe wartości usuwają losowe wewnętrzne ściany, tworząc alternatywne trasy
+### Maze generation
+- Recursive Backtracker algorithm (iterative DFS) with seeded pseudo-randomness -- identical seed produces identical maze
+- Sizes from 3x3 to 50x50 cells
+- Automatic entrance (top-left corner) and exit (bottom-right corner)
 
-### Interaktywne elementy
-- **Klucze i drzwi** -- do 5 par klucz-drzwi, każda w innym kolorze. Klucz zawsze umieszczony przed swoimi drzwiami na ścieżce rozwiązania
-- **Skarby** -- do 10 skarbów, preferowane są ślepe zaułki (trudniejsze do znalezienia)
-- Automatyczna weryfikacja rozwiązywalności -- algorytm Progressive BFS sprawdza, czy labirynt z elementami da się przejść
+### Difficulty level
+- Scale 0--10
+- 0 = perfect maze (exactly one path between any two cells)
+- Higher values remove random internal walls, creating alternative routes
 
-### Motywy graficzne (5 tematów)
-| Motyw | Opis |
-|-------|------|
-| Podstawowy | Czyste czarne linie na białym tle |
-| Ogród | Zielone tło, kwiaty, żywopłoty |
-| Loch | Ciemne kamienne ściany, klimat zamku |
-| Pustynia | Piaskowe kolory, kaktusy |
-| Ocean | Wodne kolory, wzory fal |
+### Interactive elements
+- **Keys and doors** -- up to 5 key-door pairs, each in a different color. Key is always placed before its door on the solution path
+- **Treasures** -- up to 10 treasures, dead-ends are preferred (harder to find)
+- Automatic solvability verification -- Progressive BFS algorithm checks that the maze with elements can be completed
 
-### Drukowanie
-- Generowanie wielu labiryntów na jednym wydruku (do 12 sztuk)
-- Adaptacyjny układ siatki w zależności od rozmiaru labiryntu
-- Zoptymalizowane warianty motywów pod druk
+### Graphic themes (5 themes)
+| Theme | Description |
+|-------|-------------|
+| Basic | Clean black lines on white background |
+| Garden | Green background, flowers, hedges |
+| Mine | Dark brown walls, rocks, minerals |
+| Desert | Sandy colors, cacti |
+| Ocean | Water colors, wave patterns |
 
-## Wymagania
+### Printing
+- Generate multiple mazes per printout (up to 12)
+- Adaptive grid layout depending on maze size
+- Optimized theme variants for printing
 
-- Node.js (zalecana wersja 18+)
+## Requirements
+
+- Node.js (recommended version 18+)
 - npm
 
-## Uruchomienie
+## Getting started
 
 ```bash
-# Instalacja zależności
+# Install dependencies
 npm install
 
-# Tryb deweloperski (http://localhost:5173)
+# Development mode (http://localhost:5173)
 npm run dev
 
-# Build produkcyjny
+# Production build
 npm run build
 
-# Podgląd buildu produkcyjnego
+# Preview production build
 npm run preview
 ```
 
@@ -64,11 +66,11 @@ npm run lint
 
 ## Deployment
 
-Aplikacja jest w pełni kliencka (bez backendu). Wynik `npm run build` to statyczne pliki w katalogu `dist/`, które można serwować z dowolnego serwera HTTP (GitHub Pages, Netlify, Vercel itp.).
+The app is fully client-side (no backend). The output of `npm run build` is static files in the `dist/` directory, which can be served from any HTTP server (GitHub Pages, Netlify, Vercel, etc.).
 
-## Stack technologiczny
+## Tech stack
 
 - React 19 + TypeScript
 - Vite
-- HTML5 Canvas (renderowanie labiryntów)
-- Brak zewnętrznych zależności runtime -- algorytmy generowania, rozwiązywania i renderowania labiryntów zaimplementowane od zera
+- HTML5 Canvas (maze rendering)
+- No external runtime dependencies -- maze generation, solving, and rendering algorithms implemented from scratch

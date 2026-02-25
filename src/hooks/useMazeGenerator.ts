@@ -16,10 +16,15 @@ interface MazeConfig {
   doorKeyMode: DoorKeyMode;
 }
 
+export interface MazeError {
+  key: string;
+  params?: Record<string, string>;
+}
+
 interface MazeResult {
   maze: Maze;
   items: ItemInstance[];
-  error?: string;
+  error?: MazeError;
 }
 
 export function useMazeGenerator() {
@@ -37,7 +42,7 @@ export function useMazeGenerator() {
       return {
         maze,
         items: [],
-        error: 'Nie udało się wygenerować rozwiązywalnego labiryntu. Spróbuj ponownie.',
+        error: { key: 'error.mazeUnsolvable' },
       };
     }
 
@@ -47,7 +52,7 @@ export function useMazeGenerator() {
       return { maze, items: [] };
     }
 
-    const { items, error: placeError } = placeItems(
+    const { items, errorKey, errorParams } = placeItems(
       maze,
       config.keyDoorPairs,
       config.treasures,
@@ -55,8 +60,8 @@ export function useMazeGenerator() {
       config.doorKeyMode,
     );
 
-    if (placeError) {
-      return { maze, items, error: placeError };
+    if (errorKey) {
+      return { maze, items, error: { key: errorKey, params: errorParams } };
     }
 
     // Verify item placement (progressive BFS + treasure reachability)
@@ -64,7 +69,7 @@ export function useMazeGenerator() {
       return {
         maze,
         items: [],
-        error: 'Układ przedmiotów jest nierozwiązywalny. Spróbuj ponownie lub zmniejsz liczbę par klucz-drzwi.',
+        error: { key: 'error.itemsUnsolvable' },
       };
     }
 
@@ -80,22 +85,22 @@ export function useMazeGenerator() {
   }, [generate]);
 
   const updateItems = useCallback(
-    (maze: Maze, keyDoorPairs: number, treasures: number, doorKeyMode: DoorKeyMode): { items: ItemInstance[]; error?: string } => {
+    (maze: Maze, keyDoorPairs: number, treasures: number, doorKeyMode: DoorKeyMode): { items: ItemInstance[]; error?: MazeError } => {
       if (keyDoorPairs === 0 && treasures === 0) {
         return { items: [] };
       }
 
       const seed = lastSeedRef.current;
-      const { items, error: placeError } = placeItems(maze, keyDoorPairs, treasures, seed, doorKeyMode);
+      const { items, errorKey, errorParams } = placeItems(maze, keyDoorPairs, treasures, seed, doorKeyMode);
 
-      if (placeError) {
-        return { items, error: placeError };
+      if (errorKey) {
+        return { items, error: { key: errorKey, params: errorParams } };
       }
 
       if (!verifyItemPlacement(maze, items, doorKeyMode)) {
         return {
           items: [],
-          error: 'Układ przedmiotów jest nierozwiązywalny. Zmniejsz liczbę par klucz-drzwi.',
+          error: { key: 'error.itemsUnsolvableReduce' },
         };
       }
 

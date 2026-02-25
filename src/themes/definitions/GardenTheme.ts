@@ -4,8 +4,8 @@ import { SeededRandom } from '../../utils/random';
 
 export const GardenTheme: ThemeConfig = {
   id: 'garden',
-  name: 'Ogród',
-  description: 'Żywopłot, kwiaty, motyle',
+  name: 'Garden',
+  description: 'Hedges, flowers, butterflies',
 
   drawBackground(rc: RenderContext) {
     const p = rc.padding;

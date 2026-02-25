@@ -1,5 +1,6 @@
 import { MAX_TREASURES } from '../../utils/constants';
 import type { DoorKeyMode } from '../../core/types';
+import { useTranslation } from '../../i18n';
 
 interface ItemConfigPanelProps {
   keyDoorPairs: number;
@@ -20,12 +21,14 @@ export function ItemConfigPanel({
   onTreasuresChange,
   onDoorKeyModeChange,
 }: ItemConfigPanelProps) {
+  const { t } = useTranslation();
+
   return (
     <div className="control-group">
-      <label className="control-label">Przedmioty</label>
+      <label className="control-label">{t('items')}</label>
       <div className="item-config">
         <div className="item-row">
-          <span>Przejścia:</span>
+          <span>{t('passages')}</span>
           <div className="stepper">
             <button onClick={() => onKeyDoorPairsChange(Math.max(0, keyDoorPairs - 1))}>−</button>
             <span className="stepper-value">{keyDoorPairs}</span>
@@ -34,31 +37,31 @@ export function ItemConfigPanel({
         </div>
         {keyDoorPairs > 0 && (
           <div className="item-row">
-            <span>Tryb:</span>
+            <span>{t('mode')}</span>
             <div className="mode-selector">
               <button
                 className={doorKeyMode === 'colored' ? 'active' : ''}
                 onClick={() => onDoorKeyModeChange('colored')}
               >
-                Kolory
+                {t('colors')}
               </button>
               <button
                 className={doorKeyMode === 'numbered' ? 'active' : ''}
                 onClick={() => onDoorKeyModeChange('numbered')}
               >
-                Symbole
+                {t('symbols')}
               </button>
               <button
                 className={doorKeyMode === 'generic' ? 'active' : ''}
                 onClick={() => onDoorKeyModeChange('generic')}
               >
-                Dowolny
+                {t('generic')}
               </button>
             </div>
           </div>
         )}
         <div className="item-row">
-          <span>Skarby:</span>
+          <span>{t('treasures')}</span>
           <div className="stepper">
             <button onClick={() => onTreasuresChange(Math.max(0, treasures - 1))}>−</button>
             <span className="stepper-value">{treasures}</span>

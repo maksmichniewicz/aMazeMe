@@ -5,7 +5,7 @@ import { SeededRandom } from '../../utils/random';
 export const OceanTheme: ThemeConfig = {
   id: 'ocean',
   name: 'Ocean',
-  description: 'Fale, statki, latarnie morskie',
+  description: 'Waves, ships, lighthouses',
 
   drawBackground(rc: RenderContext) {
     const p = rc.padding;

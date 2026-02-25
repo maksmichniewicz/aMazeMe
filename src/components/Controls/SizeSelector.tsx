@@ -1,4 +1,5 @@
 import { MIN_MAZE_SIZE, MAX_MAZE_SIZE } from '../../utils/constants';
+import { useTranslation } from '../../i18n';
 
 interface SizeSelectorProps {
   width: number;
@@ -8,33 +9,35 @@ interface SizeSelectorProps {
 }
 
 const PRESETS = [
-  { label: 'Mały (10x10)', width: 10, height: 10 },
-  { label: 'Średni (20x20)', width: 20, height: 20 },
-  { label: 'Duży (30x30)', width: 30, height: 30 },
-  { label: 'Gigant (50x50)', width: 50, height: 50 },
+  { key: 'small', width: 10, height: 10 },
+  { key: 'medium', width: 20, height: 20 },
+  { key: 'large', width: 30, height: 30 },
+  { key: 'giant', width: 50, height: 50 },
 ];
 
 export function SizeSelector({ width, height, onWidthChange, onHeightChange }: SizeSelectorProps) {
+  const { t } = useTranslation();
+
   return (
     <div className="control-group">
-      <label className="control-label">Rozmiar labiryntu</label>
+      <label className="control-label">{t('mazeSize')}</label>
       <div className="presets">
         {PRESETS.map((p) => (
           <button
-            key={p.label}
+            key={p.key}
             className={`preset-btn ${width === p.width && height === p.height ? 'active' : ''}`}
             onClick={() => {
               onWidthChange(p.width);
               onHeightChange(p.height);
             }}
           >
-            {p.label}
+            {t(p.key)}
           </button>
         ))}
       </div>
       <div className="size-inputs">
         <div className="size-input">
-          <span>Szerokość:</span>
+          <span>{t('width')}</span>
           <input
             type="number"
             min={MIN_MAZE_SIZE}
@@ -44,7 +47,7 @@ export function SizeSelector({ width, height, onWidthChange, onHeightChange }: S
           />
         </div>
         <div className="size-input">
-          <span>Wysokość:</span>
+          <span>{t('height')}</span>
           <input
             type="number"
             min={MIN_MAZE_SIZE}

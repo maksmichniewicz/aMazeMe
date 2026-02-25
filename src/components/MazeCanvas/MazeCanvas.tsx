@@ -4,6 +4,7 @@ import type { ThemeConfig } from '../../themes/types';
 import type { ItemInstance } from '../../items/types';
 import { renderMaze } from '../../renderer/MazeRenderer';
 import { DEFAULT_CELL_SIZE } from '../../utils/constants';
+import { useTranslation } from '../../i18n';
 
 interface MazeCanvasProps {
   maze: Maze | null;
@@ -14,6 +15,7 @@ interface MazeCanvasProps {
 
 export function MazeCanvas({ maze, theme, items, doorKeyMode }: MazeCanvasProps) {
   const ref = useRef<HTMLCanvasElement>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (!maze || !ref.current) return;
@@ -33,7 +35,7 @@ export function MazeCanvas({ maze, theme, items, doorKeyMode }: MazeCanvasProps)
   if (!maze) {
     return (
       <div className="maze-placeholder">
-        <p>Kliknij "Utwórz" aby rozpocząć</p>
+        <p>{t('placeholder')}</p>
       </div>
     );
   }

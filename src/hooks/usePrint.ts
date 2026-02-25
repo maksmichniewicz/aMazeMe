@@ -1,5 +1,5 @@
 export function usePrint() {
-  const print = (canvases: HTMLCanvasElement[], columns: number) => {
+  const print = (canvases: HTMLCanvasElement[], columns: number, title: string) => {
     const dataUrls = canvases.map((c) => c.toDataURL('image/png'));
 
     const printWindow = window.open('', '_blank');
@@ -31,7 +31,7 @@ export function usePrint() {
       <!DOCTYPE html>
       <html>
         <head>
-          <title>aMazeMe - Drukuj labirynty</title>
+          <title>${title}</title>
           <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body {

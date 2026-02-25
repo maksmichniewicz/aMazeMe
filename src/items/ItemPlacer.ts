@@ -20,7 +20,7 @@ export function placeItems(
   treasureCount: number,
   seed: number,
   doorKeyMode: DoorKeyMode,
-): { items: ItemInstance[]; error?: string } {
+): { items: ItemInstance[]; errorKey?: string; errorParams?: Record<string, string> } {
   const rng = new SeededRandom(seed + 3000);
   const items: ItemInstance[] = [];
   const occupied = new Set<string>();
@@ -41,7 +41,8 @@ export function placeItems(
     if (!doorPassage) {
       return {
         items,
-        error: `Nie udało się umieścić przejścia nr ${i + 1}. Labirynt jest za mały lub trudność jest za wysoka.`,
+        errorKey: 'error.doorPlacement',
+        errorParams: { n: String(i + 1) },
       };
     }
 
@@ -49,7 +50,8 @@ export function placeItems(
     if (!keyPos) {
       return {
         items,
-        error: `Nie udało się umieścić klucza nr ${i + 1}. Labirynt jest za mały.`,
+        errorKey: 'error.keyPlacement',
+        errorParams: { n: String(i + 1) },
       };
     }
 
@@ -113,7 +115,8 @@ export function placeItems(
   if (actualTreasures < treasureCount) {
     return {
       items,
-      error: `Udało się umieścić tylko ${actualTreasures} z ${treasureCount} skarbów.`,
+      errorKey: 'error.partialTreasures',
+      errorParams: { actual: String(actualTreasures), total: String(treasureCount) },
     };
   }
 

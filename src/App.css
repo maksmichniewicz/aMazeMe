@@ -13,6 +13,13 @@
   text-align: center;
 }
 
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
 .header-logo {
   display: flex;
   align-items: center;
@@ -34,6 +41,37 @@
   margin-top: 4px;
   opacity: 0.9;
   font-size: 0.95rem;
+}
+
+/* Language switcher */
+.lang-switcher {
+  position: absolute;
+  right: 0;
+  display: flex;
+  gap: 4px;
+}
+
+.lang-btn {
+  padding: 4px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.lang-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+}
+
+.lang-btn.active {
+  background: rgba(255, 255, 255, 0.25);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.6);
 }
 
 /* Layout */
