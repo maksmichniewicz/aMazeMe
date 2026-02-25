@@ -9,46 +9,36 @@
 .header {
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
   color: white;
-  padding: 16px 24px;
-  text-align: center;
+  padding: 8px 24px;
 }
 
 .header-top {
   display: flex;
   align-items: center;
-  justify-content: center;
-  position: relative;
+  justify-content: space-between;
 }
 
 .header-logo {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .header-icon {
-  font-size: 2rem;
+  font-size: 1.4rem;
 }
 
 .header h1 {
-  font-size: 2rem;
+  font-size: 1.4rem;
   margin: 0;
   letter-spacing: -0.5px;
 }
 
-.header-subtitle {
-  margin-top: 4px;
-  opacity: 0.9;
-  font-size: 0.95rem;
-}
-
 /* Language switcher */
 .lang-switcher {
-  position: absolute;
-  right: 0;
   display: flex;
   gap: 4px;
+  flex-shrink: 0;
 }
 
 .lang-btn {
@@ -86,9 +76,9 @@
   min-width: 320px;
   background: white;
   border-right: 1px solid #e5e7eb;
-  padding: 20px;
-  overflow-y: auto;
-  max-height: calc(100vh - 100px);
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 52px);
 }
 
 .layout-main {
@@ -103,6 +93,16 @@
 
 /* Controls */
 .maze-controls {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.maze-controls-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -178,17 +178,16 @@
 /* Theme cards */
 .theme-cards {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: 6px;
 }
 
 .theme-card {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  padding: 10px 12px;
+  align-items: center;
+  padding: 6px 12px;
   border: 2px solid #e5e7eb;
-  border-radius: 10px;
+  border-radius: 8px;
   background: white;
   cursor: pointer;
   transition: all 0.2s;
@@ -206,13 +205,8 @@
 
 .theme-card-name {
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: #1f2937;
-}
-
-.theme-card-desc {
-  font-size: 0.75rem;
-  color: #6b7280;
 }
 
 /* Item config */
@@ -313,7 +307,10 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-top: 8px;
+  padding: 12px 20px;
+  border-top: 1px solid #e5e7eb;
+  background: white;
+  flex-shrink: 0;
 }
 
 .btn {

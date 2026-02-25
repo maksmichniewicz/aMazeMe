@@ -1,7 +1,18 @@
 import type { ItemTypeDefinition, ItemInstance } from '../types';
 import type { CellRect, RenderContext } from '../../renderer/types';
 
-const DOOR_COLORS = ['#f44336', '#2196f3', '#4caf50', '#ff9800', '#9c27b0'];
+const DOOR_COLORS = [
+  '#f44336', // red
+  '#2196f3', // blue
+  '#4caf50', // green
+  '#ff9800', // orange
+  '#9c27b0', // purple
+  '#00bcd4', // cyan
+  '#e91e63', // pink
+  '#795548', // brown
+  '#607d8b', // blue grey
+  '#cddc39', // lime
+];
 const DOOR_MONO_COLOR = '#555555';
 const DOOR_SYMBOL_COLOR = '#444444';
 

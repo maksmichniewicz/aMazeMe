@@ -34,38 +34,40 @@ export function MazeControls(props: MazeControlsProps) {
 
   return (
     <div className="maze-controls">
-      <SizeSelector
-        width={props.width}
-        height={props.height}
-        onWidthChange={props.onWidthChange}
-        onHeightChange={props.onHeightChange}
-      />
-      <DifficultySlider
-        value={props.difficulty}
-        onChange={props.onDifficultyChange}
-      />
-      <ThemeSelector
-        selectedThemeId={props.themeId}
-        onChange={props.onThemeChange}
-      />
-      <ItemConfigPanel
-        keyDoorPairs={props.keyDoorPairs}
-        treasures={props.treasures}
-        doorKeyMode={props.doorKeyMode}
-        maxKeyDoorPairs={props.maxKeyDoorPairs}
-        onKeyDoorPairsChange={props.onKeyDoorPairsChange}
-        onTreasuresChange={props.onTreasuresChange}
-        onDoorKeyModeChange={props.onDoorKeyModeChange}
-      />
-      <div className="control-group">
-        <label className="control-label">{t('mazeCount')}</label>
-        <div className="item-config">
-          <div className="item-row">
-            <span>{t('perPage')}</span>
-            <div className="stepper">
-              <button onClick={() => props.onMazeCountChange(Math.max(1, props.mazeCount - 1))}>−</button>
-              <span className="stepper-value">{props.mazeCount}</span>
-              <button onClick={() => props.onMazeCountChange(Math.min(props.maxMazeCount, props.mazeCount + 1))}>+</button>
+      <div className="maze-controls-scroll">
+        <SizeSelector
+          width={props.width}
+          height={props.height}
+          onWidthChange={props.onWidthChange}
+          onHeightChange={props.onHeightChange}
+        />
+        <DifficultySlider
+          value={props.difficulty}
+          onChange={props.onDifficultyChange}
+        />
+        <ThemeSelector
+          selectedThemeId={props.themeId}
+          onChange={props.onThemeChange}
+        />
+        <ItemConfigPanel
+          keyDoorPairs={props.keyDoorPairs}
+          treasures={props.treasures}
+          doorKeyMode={props.doorKeyMode}
+          maxKeyDoorPairs={props.maxKeyDoorPairs}
+          onKeyDoorPairsChange={props.onKeyDoorPairsChange}
+          onTreasuresChange={props.onTreasuresChange}
+          onDoorKeyModeChange={props.onDoorKeyModeChange}
+        />
+        <div className="control-group">
+          <label className="control-label">{t('mazeCount')}</label>
+          <div className="item-config">
+            <div className="item-row">
+              <span>{t('perPage')}</span>
+              <div className="stepper">
+                <button onClick={() => props.onMazeCountChange(Math.max(1, props.mazeCount - 1))}>−</button>
+                <span className="stepper-value">{props.mazeCount}</span>
+                <button onClick={() => props.onMazeCountChange(Math.min(props.maxMazeCount, props.mazeCount + 1))}>+</button>
+              </div>
             </div>
           </div>
         </div>
