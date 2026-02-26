@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Header } from './components/Header/Header';
 import { Layout } from './components/Layout/Layout';
 import { MazeControls } from './components/Controls/MazeControls';
@@ -92,6 +92,9 @@ function App() {
     const firstError = results.find((r) => r.error)?.error;
     setError(firstError || null);
   }, [width, height, difficulty, keyDoorPairs, treasures, doorKeyMode, mazeCount, generateMultiple]);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { handleGenerate(); }, [width, height, difficulty, mazeCount]);
 
   const handleKeyDoorPairsChange = useCallback((value: number) => {
     setKeyDoorPairs(value);

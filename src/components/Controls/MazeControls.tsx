@@ -45,19 +45,6 @@ export function MazeControls(props: MazeControlsProps) {
           value={props.difficulty}
           onChange={props.onDifficultyChange}
         />
-        <ThemeSelector
-          selectedThemeId={props.themeId}
-          onChange={props.onThemeChange}
-        />
-        <ItemConfigPanel
-          keyDoorPairs={props.keyDoorPairs}
-          treasures={props.treasures}
-          doorKeyMode={props.doorKeyMode}
-          maxKeyDoorPairs={props.maxKeyDoorPairs}
-          onKeyDoorPairsChange={props.onKeyDoorPairsChange}
-          onTreasuresChange={props.onTreasuresChange}
-          onDoorKeyModeChange={props.onDoorKeyModeChange}
-        />
         <div className="control-group">
           <label className="control-label">{t('mazeCount')}</label>
           <div className="item-config">
@@ -71,6 +58,20 @@ export function MazeControls(props: MazeControlsProps) {
             </div>
           </div>
         </div>
+        <hr className="controls-separator" />
+        <ThemeSelector
+          selectedThemeId={props.themeId}
+          onChange={props.onThemeChange}
+        />
+        <ItemConfigPanel
+          keyDoorPairs={props.keyDoorPairs}
+          treasures={props.treasures}
+          doorKeyMode={props.doorKeyMode}
+          maxKeyDoorPairs={props.maxKeyDoorPairs}
+          onKeyDoorPairsChange={props.onKeyDoorPairsChange}
+          onTreasuresChange={props.onTreasuresChange}
+          onDoorKeyModeChange={props.onDoorKeyModeChange}
+        />
       </div>
       <div className="control-buttons">
         <button className="btn btn-primary" onClick={props.onGenerate}>
